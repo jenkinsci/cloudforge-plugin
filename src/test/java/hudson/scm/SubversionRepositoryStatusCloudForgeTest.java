@@ -24,8 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import javax.servlet.ServletException;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.jvnet.hudson.test.Bug;
