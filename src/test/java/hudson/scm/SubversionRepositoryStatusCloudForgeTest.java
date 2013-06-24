@@ -38,7 +38,7 @@ import org.tmatesoft.svn.core.SVNURL;
 public class SubversionRepositoryStatusCloudForgeTest {
 
 	@SuppressWarnings("rawtypes")
-	static class JobProviderBean implements SubversionRepositoryStatus.JobProvider {
+	static class JobProviderBean implements SubversionRepositoryStatusCloudForge.JobProvider {
 		private List<AbstractProject> allJobs = new ArrayList<AbstractProject>();
 
 		public List<AbstractProject> getAllJobs() {

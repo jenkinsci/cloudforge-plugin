@@ -57,7 +57,11 @@ import org.tmatesoft.svn.core.SVNURL;
  * @see SubversionRepositoryStatus 
  */
 public class SubversionRepositoryStatusCloudForge extends AbstractModelObject {
-	private static class Status {
+    static interface JobProvider {
+        @SuppressWarnings("rawtypes")
+        List<AbstractProject> getAllJobs();
+    }
+ 	private static class Status {
 		boolean scmFound;
 		boolean triggerFound;
 		boolean rootFound;
@@ -87,7 +91,7 @@ public class SubversionRepositoryStatusCloudForge extends AbstractModelObject {
 
 	private static final Method IS_IGNORE_POST_COMMIT_HOOKS_METHOD = getIsIgnorePostCommitHooksMethod();
 
-	private SubversionRepositoryStatus.JobProvider jobProvider = new SubversionRepositoryStatus.JobProvider() {
+	private JobProvider jobProvider = new JobProvider() {
 		@SuppressWarnings("rawtypes")
 		@Override
 		public List<AbstractProject> getAllJobs() {
@@ -103,7 +107,7 @@ public class SubversionRepositoryStatusCloudForge extends AbstractModelObject {
 
 
 	// for tests
-	void setJobProvider(SubversionRepositoryStatus.JobProvider provider) {
+	void setJobProvider(JobProvider provider) {
 		jobProvider = provider;
 	}
 
