@@ -8,10 +8,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Build;
 import hudson.model.ItemGroup;
-import hudson.model.AbstractProject;
 import hudson.model.Project;
 import hudson.triggers.SCMTrigger;
 
@@ -32,24 +33,32 @@ import org.kohsuke.stapler.StaplerResponse;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
 
-/**
- * @see SubversionRepositoryStatusTest
- */
-public class SubversionRepositoryStatusCloudForgeTest {
+import javax.servlet.ServletException;
 
-	@SuppressWarnings("rawtypes")
-	static class JobProviderBean implements SubversionRepositoryStatusCloudForge.JobProvider {
-		private List<AbstractProject> allJobs = new ArrayList<AbstractProject>();
+public class CloudForgeWebHookRecieverTest {
 
-		public List<AbstractProject> getAllJobs() {
-			return Collections.unmodifiableList(allJobs);
-		}
+    @SuppressWarnings("rawtypes")
+    static class JobProviderBean implements AbstractPostCommitHookReceiver.JobProvider {
+        private List<AbstractProject> allJobs = new ArrayList<AbstractProject>();
 
-		public void addJob(AbstractProject job) {
-			allJobs.add(job);
-		}
-	}
-	
+        public List<AbstractProject> getAllJobs() {
+            return Collections.unmodifiableList(allJobs);
+        }
+
+        public void addJob(AbstractProject job) {
+            allJobs.add(job);
+        }
+    }
+
+    private CloudForgeWebHookReciever hookReciever = new CloudForgeWebHookReciever();
+
+    private JobProviderBean jobProvider = new JobProviderBean();
+
+    @Before
+    public void setup() {
+        hookReciever.setJobProvider(jobProvider);
+    }
+
 	static abstract class MockBuild extends Build<MockProject, MockBuild> {
 
 		protected MockBuild(MockProject project) throws IOException {
@@ -92,40 +101,8 @@ public class SubversionRepositoryStatusCloudForgeTest {
 		return loc;
 	}
 
-	private SubversionRepositoryStatusCloudForge repositoryStatus = 
-			new SubversionRepositoryStatusCloudForge("cloudforge.com");
-	private JobProviderBean jobProvider = new JobProviderBean();
-
-	@Before
-	public void setUp() {
-		repositoryStatus.setJobProvider(jobProvider);
-	}
-
 	@Test
-	@Bug(15794)
-	public void shouldIgnoreDisabledJobs() throws IOException {
-
-		// GIVEN: a disabled project
-		final MockProject project = mock(MockProject.class);
-		when(project.isDisabled()).thenReturn(true);
-
-		jobProvider.addJob(project);
-
-		// WHEN: post-commit hook is triggered
-		StaplerRequest request = mock(StaplerRequest.class);
-		when(request.getReader()).thenReturn(asReader("/somepath\n"));
-		when(request.getParameter("changed")).thenReturn("/somepath\n");
-		StaplerResponse response = mock(StaplerResponse.class);
-
-		repositoryStatus.doNotifyCommit(request, response);
-
-		// THEN: disabled project is not considered at all
-		verify(response, atLeastOnce()).setStatus(SC_OK);
-		verify(project, never()).getScm();
-	}
-
-	@Test
-	public void shouldPoll() throws IOException {
+	public void shouldPoll() throws IOException, ServletException {
 		// GIVEN: an active project
 		final MockProject project = mock(MockProject.class);
 		when(project.isDisabled()).thenReturn(false);
@@ -148,7 +125,7 @@ public class SubversionRepositoryStatusCloudForgeTest {
 
 		StaplerResponse response = mock(StaplerResponse.class);
 
-		repositoryStatus.doNotifyCommit(request, response);
+		hookReciever.doNotifyCommit(request, response);
 
 		// THEN: poll the project to see if it changed
 		verify(response, atLeastOnce()).setStatus(SC_OK);
