@@ -105,6 +105,6 @@ public class CloudForgeWebHookReciever extends AbstractPostCommitHookReceiver im
         };
     }
 
-    private static final Logger LOGGER = Logger.getLogger(SubversionRepositoryStatusCloudForge.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CloudForgeWebHookReciever.class.getName());
 
 }
